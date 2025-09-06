@@ -1,0 +1,12 @@
+service android.hardware.biometrics.fingerprint-service.nt.pong /vendor/bin/hw/android.hardware.biometrics.fingerprint-service.nt.pong
+    class hal
+    user system
+    group system input drmrpc
+    capabilities BLOCK_SUSPEND
+    interface aidl android.hardware.biometrics.fingerprint IFingerprint/default
+    disabled
+
+on property:sys.boot_completed=1
+    start android.hardware.biometrics.fingerprint-service.nt.pong
+
+

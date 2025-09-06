@@ -1,0 +1,15 @@
+allow hal_fingerprint_default hal_fingerprint_default_exec file { read open execute getattr map };
+allow hal_fingerprint_default vendor_file file { read open getattr };
+allow hal_fingerprint_default vendor_file dir { search getattr open };
+allow hal_fingerprint_default servicemanager service_manager { add find list };
+allow hal_fingerprint_default hal_fingerprint_hwservice hwservice_manager find;
+allow hal_fingerprint_default hal_client_domain binder call;
+allow hal_fingerprint_default hwservicemanager binder { call transfer };
+allow hal_fingerprint_default fingerprint_device chr_file { read write open getattr };
+allow hal_fingerprint_default tee_device chr_file { read write open getattr };
+allow hal_fingerprint_default vendor_sysfs_fingerprint dir { search getattr open };
+allow hal_fingerprint_default vendor_sysfs_fingerprint file { read open getattr write };
+set_prop(hal_fingerprint_default, system_fingerprint_prop)
+set_prop(hal_fingerprint_default, vendor_fingerprint_prop)
+
+

@@ -1,0 +1,80 @@
+name: build-ksu-fp-aidl-nt-pong
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'aidl_service/**'
+      - 'ksu_fp_aidl_nt.pong/**'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y --no-install-recommends unzip zip ninja-build curl
+
+      - name: Set up Android SDK + NDK
+        env:
+          ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
+        run: |
+          set -euo pipefail
+          mkdir -p "$ANDROID_SDK_ROOT/cmdline-tools"
+          curl -L -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q cmdline-tools.zip -d "$ANDROID_SDK_ROOT/cmdline-tools"
+          mv "$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools" "$ANDROID_SDK_ROOT/cmdline-tools/latest"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --sdk_root="$ANDROID_SDK_ROOT" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;26.2.11394342" \
+            "cmake;3.22.1"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/26.2.11394342" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+
+      - name: Configure (CMake)
+        env:
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_SDK_ROOT }}
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+        run: |
+          cmake -S aidl_service -B build -G Ninja \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-33 \
+            -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
+            -DANDROID_STL=c++_static
+
+      - name: Build
+        run: cmake --build build --config Release -j
+
+      - name: Stage binary into KSU module
+        run: |
+          mkdir -p ksu_fp_aidl_nt.pong/system/vendor/bin/hw
+          cp build/android.hardware.biometrics.fingerprint-service.nt.pong ksu_fp_aidl_nt.pong/system/vendor/bin/hw/
+          chmod 0755 ksu_fp_aidl_nt.pong/system/vendor/bin/hw/android.hardware.biometrics.fingerprint-service.nt.pong
+
+      - name: Pack module zip
+        run: |
+          zip -r ksu_fp_aidl_nt.pong-${{ github.sha }}.zip ksu_fp_aidl_nt.pong
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ksu-fp-module-${{ github.sha }}
+          path: ksu_fp_aidl_nt.pong-${{ github.sha }}.zip
+
+

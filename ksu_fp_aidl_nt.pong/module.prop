@@ -1,0 +1,8 @@
+id=fp-aidl-nt-pong
+name=Fingerprint AIDL HAL (Nothing Pong) - KernelSU
+version=0.1.0
+versionCode=101
+author=lizy
+description=Provide AIDL IFingerprint/default HAL systemlessly and disable HIDL 2.3 to fix UDFPS callback null on Nothing Pong (A065). Place arm64 binary at system/vendor/bin/hw/android.hardware.biometrics.fingerprint-service.nt.pong.
+
+

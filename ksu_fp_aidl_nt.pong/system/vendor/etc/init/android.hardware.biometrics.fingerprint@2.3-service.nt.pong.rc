@@ -1,0 +1,6 @@
+override service android.hardware.biometrics.fingerprint@2.3-service.nt.pong /bin/true
+    class hal
+    disabled
+    oneshot
+
+
